@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw
 
 PADDING = 1
 OUTPUT_SCALE = 1
+ERROR_THRESHOLD = 10
 
 
 def weighted_average(hist):
@@ -29,7 +30,7 @@ class QuadtreeNode(object):
     def __init__(self, img, box, depth):
         self.box = box  # (left, top, right, bottom)
         self.depth = depth
-        self.children = (None, None, None, None)  # tl, tr, bl, br
+        self.children = None  # tl, tr, bl, br
         self.leaf = False
 
         # Gets the nodes average color
@@ -38,9 +39,9 @@ class QuadtreeNode(object):
         hist = image.histogram()
         self.color, self.error = color_from_histogram(hist)  # (r, g, b), error
 
-        def is_leaf(self):
-            """Determins if a the node is a leaf"""
-            return self.leaf
+    def is_leaf(self):
+        """Determins if a the node is a leaf"""
+        return self.leaf
 
 
 class Quadtree(object):
@@ -48,15 +49,15 @@ class Quadtree(object):
         sections of an image where there at most n leaf nodes where
         n is the number of pixles in the image"""
 
-    def __init__(self, image, max_depth):
+    def __init__(self, image, max_depth=7):
         self.root = QuadtreeNode(image, image.getbbox(), 0)
         self.width, self.height = image.size
         self.max_depth = max_depth
         self._build_tree(image, self.root, max_depth)
 
     def _build_tree(self, image, node, max_depth, curr_depth=0):
-        """Recursively adds nodes untill max_depth is reached"""
-        if curr_depth >= max_depth:
+        """Recursively adds nodes untill max_depth is reached or error is less than 5"""
+        if curr_depth >= max_depth or node.error <= ERROR_THRESHOLD:
             node.leaf = True
             return
 
@@ -119,8 +120,8 @@ class Quadtree(object):
     def create_gif(self, file_name, duration=1000, loop=0):
         """Creates a gif at the given filename from each level of the tree"""
         images = []
-        end_product_image = self._create_image_from_depth(self.depth)
-        for i in range(self.depth):
+        end_product_image = self._create_image_from_depth(self.max_depth)
+        for i in range(self.max_depth):
             image = self._create_image_from_depth(i)
             images.append(image)
         # Add extra final produc images to allow for seeing result longer
