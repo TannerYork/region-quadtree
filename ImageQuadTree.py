@@ -55,16 +55,18 @@ class Quadtree(object):
         self.root = QuadtreeNode(image, image.getbbox(), 0)
         self.width, self.height = image.size
         self.max_depth = 0
+
         self._build_tree(image, self.root, max_depth)
 
     def _build_tree(self, image, node, max_depth=None, curr_depth=0):
         """Recursively adds nodes untill max_depth is reached or error is less than 5"""
         if (max_depth is not None and curr_depth >= max_depth) or node.error <= ERROR_THRESHOLD:
+            if node.depth > self.max_depth:
+                self.max_depth = node.depth
             node.leaf = True
             return
 
         boxes = self._split(image, node.box)
-        self.max_depth += 1
         node_children = [QuadtreeNode(image, box, curr_depth+1)
                          for box in boxes]
         for child in node_children:
@@ -118,6 +120,9 @@ class Quadtree(object):
 
     def render_at_depth(self, depth=0):
         """Renders the image of a given depth/level"""
+        if depth > self.max_depth:
+            raise ValueError('A depth larger than the trees depth was given')
+
         image = self._create_image_from_depth(depth)
         image.show()
 
@@ -128,7 +133,7 @@ class Quadtree(object):
         for i in range(self.max_depth):
             image = self._create_image_from_depth(i)
             images.append(image)
-        # Add extra final product images to allow for seeing result longer
+        # Add extra final produc images to allow for seeing result longer
         for _ in range(4):
             images.append(end_product_image)
         # Save the images as a gif using Pillow
