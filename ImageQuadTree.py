@@ -1,16 +1,18 @@
 from PIL import Image, ImageDraw
 
-PADDING = 1
+PADDING = 0
 OUTPUT_SCALE = 1
-ERROR_THRESHOLD = 10
+ERROR_THRESHOLD = 7
 
 
 def weighted_average(hist):
     """Returns the weighted color average and error from a hisogram of pixles"""
     total = sum(hist)
-    value = sum(i * x for i, x in enumerate(hist)) / total
-    error = sum(x * (value - i) ** 2 for i, x in enumerate(hist)) / total
-    error = error ** 0.5
+    value, error = 0, 0
+    if total > 0:
+        value = sum(i * x for i, x in enumerate(hist)) / total
+        error = sum(x * (value - i) ** 2 for i, x in enumerate(hist)) / total
+        error = error ** 0.5
     return value, error
 
 
@@ -49,19 +51,20 @@ class Quadtree(object):
         sections of an image where there at most n leaf nodes where
         n is the number of pixles in the image"""
 
-    def __init__(self, image, max_depth=7):
+    def __init__(self, image, max_depth=None):
         self.root = QuadtreeNode(image, image.getbbox(), 0)
         self.width, self.height = image.size
-        self.max_depth = max_depth
+        self.max_depth = 0
         self._build_tree(image, self.root, max_depth)
 
-    def _build_tree(self, image, node, max_depth, curr_depth=0):
+    def _build_tree(self, image, node, max_depth=None, curr_depth=0):
         """Recursively adds nodes untill max_depth is reached or error is less than 5"""
-        if curr_depth >= max_depth or node.error <= ERROR_THRESHOLD:
+        if (max_depth is not None and curr_depth >= max_depth) or node.error <= ERROR_THRESHOLD:
             node.leaf = True
             return
 
         boxes = self._split(image, node.box)
+        self.max_depth += 1
         node_children = [QuadtreeNode(image, box, curr_depth+1)
                          for box in boxes]
         for child in node_children:
@@ -100,7 +103,8 @@ class Quadtree(object):
         """Creates a Pillow image object from a given level/depth of the tree"""
         m = OUTPUT_SCALE
         dx, dy = (PADDING, PADDING)  # padding for each image section
-        image = Image.new('RGB', (self.width * m + dx, self.height * m + dy))
+        image = Image.new('RGB', (int(self.width * m + dx),
+                                  int(self.height * m + dy)))
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, self.width * m + dx,
                         self.height * m + dy), (0, 0, 0))
@@ -112,7 +116,7 @@ class Quadtree(object):
             draw.rectangle(box, node.color)
         return image
 
-    def render_at_depth(self, depth):
+    def render_at_depth(self, depth=0):
         """Renders the image of a given depth/level"""
         image = self._create_image_from_depth(depth)
         image.show()
@@ -124,7 +128,7 @@ class Quadtree(object):
         for i in range(self.max_depth):
             image = self._create_image_from_depth(i)
             images.append(image)
-        # Add extra final produc images to allow for seeing result longer
+        # Add extra final product images to allow for seeing result longer
         for _ in range(4):
             images.append(end_product_image)
         # Save the images as a gif using Pillow
