@@ -8,9 +8,11 @@ equal to an error threshold. This process is then repeated N times untill all
 quadrents have an error less than the error threshold or reach the max depth of
 the tree.
 
+You read more about how this works in my article [here](https://www.google.com "Tanner Yorks Medium")
+
+
 ## Examples
 
 ![Compressing Starry Night](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/starry_night_compression.gif)
 ![Compressing Profile](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/profile_compression.gif)
-![Compressing Flowers](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/flowers_compression.gif)
 ![Compressing Wall-E](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/wall-e_compression.gif)
