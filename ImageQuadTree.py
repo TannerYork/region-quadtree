@@ -45,61 +45,58 @@ class QuadtreeNode(object):
         """Determins if a the node is a leaf"""
         return self.leaf
 
+    def split(self, img):
+        """Splits the given image section into four equal image boxes"""
+        l, t, r, b = self.box
+        lr = l + (r - l) / 2
+        tb = t + (b - t) / 2
+        tl = QuadtreeNode(img, (l, t, lr, tb), self.depth+1)
+        tr = QuadtreeNode(img, (lr, t, r, tb), self.depth+1)
+        bl = QuadtreeNode(img, (l, tb, lr, b), self.depth+1)
+        br = QuadtreeNode(img, (lr, tb, r, b), self.depth+1)
+        self.children = [tl, tr, bl, br]
+
 
 class Quadtree(object):
     """Tree that has nodes with at most four child nodes that hold 
         sections of an image where there at most n leaf nodes where
         n is the number of pixles in the image"""
 
-    def __init__(self, image, max_depth=None):
+    def __init__(self, image, max_depth=1024):
         self.root = QuadtreeNode(image, image.getbbox(), 0)
         self.width, self.height = image.size
         self.max_depth = 0
 
         self._build_tree(image, self.root, max_depth)
 
-    def _build_tree(self, image, node, max_depth=None, curr_depth=0):
+    def _build_tree(self, image, node, max_depth):
         """Recursively adds nodes untill max_depth is reached or error is less than 5"""
-        if (max_depth is not None and curr_depth >= max_depth) or node.error <= ERROR_THRESHOLD:
+        if (node.depth >= max_depth) or (node.error <= ERROR_THRESHOLD):
             if node.depth > self.max_depth:
                 self.max_depth = node.depth
             node.leaf = True
             return
 
-        boxes = self._split(image, node.box)
-        node_children = [QuadtreeNode(image, box, curr_depth+1)
-                         for box in boxes]
-        for child in node_children:
-            self._build_tree(image, child, max_depth, curr_depth+1)
-        node.children = node_children
-
-    def _split(self, image, box):
-        """Splits the given image section into four equal image boxes"""
-        l, t, r, b = box
-        lr = l + (r - l) / 2
-        tb = t + (b - t) / 2
-        tl = (l, t, lr, tb)
-        tr = (lr, t, r, tb)
-        bl = (l, tb, lr, b)
-        br = (lr, tb, r, b)
-        return [tl, tr, bl, br]
+        node.split(image)
+        for child in node.children:
+            self._build_tree(image, child, max_depth)
 
     def get_leaf_nodes(self, depth):
         """Gets all the nodes on a given depth/level"""
-        if depth > self.max_depth:
+        def get_leaf_nodes_recusion(tree, node, depth, func):
+            """Recusivley gets leaf nodes based on whether a node is a leaf or the given depth is reached"""
+            if node.leaf is True or node.depth == depth:
+                func(node)
+            elif node.children is not None:
+                for child in node.children:
+                    get_leaf_nodes_recusion(tree, child, depth, func)
+
+        if depth > tree.max_depth:
             raise ValueError('A depth larger than the trees depth was given')
 
         leaf_nodes = []
-        self._get_leaf_nodes_recusion(self.root, depth, leaf_nodes.append)
+        get_leaf_nodes_recusion(self, self.root, depth, leaf_nodes.append)
         return leaf_nodes
-
-    def _get_leaf_nodes_recusion(self, node, depth, func):
-        """Recusivley gets leaf nodes based on whether a node is a leaf or the given depth is reached"""
-        if node.leaf is True or node.depth == depth:
-            func(node)
-        elif node.children is not None:
-            for child in node.children:
-                self._get_leaf_nodes_recusion(child, depth, func)
 
     def _create_image_from_depth(self, depth):
         """Creates a Pillow image object from a given level/depth of the tree"""
