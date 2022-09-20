@@ -8,7 +8,7 @@ equal to an error threshold. This process is then repeated N times untill all
 quadrents have an error less than the error threshold or reach the max depth of
 the tree.
 
-You read more about how this works in my article [here](https://www.google.com "Tanner Yorks Medium")
+You read more about how this works in my article [here](https://medium.com/@tannerwyork/quadtrees-for-image-processing-302536c95c00)
 
 
 ## Examples
