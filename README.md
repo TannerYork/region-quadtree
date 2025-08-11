@@ -14,5 +14,4 @@ You read more about how this works in my article [here](https://medium.com/@tann
 ## Examples
 
 ![Compressing Starry Night](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/starry_night_compression.gif)
-![Compressing Profile](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/profile_compression.gif)
 ![Compressing Wall-E](https://github.com/TannerYork/Region-Quadtree/blob/master/Images/wall-e_compression.gif)
